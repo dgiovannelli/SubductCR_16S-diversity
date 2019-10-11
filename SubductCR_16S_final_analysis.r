@@ -1,11 +1,11 @@
 ##########################################################
-## Analysis of the 16S rRNA diversity results from the Biology Meet Subduction project leg 1
-## Samples from Norther and Central Costa Rica collected in 2017
+## Analysis of the 16S rRNA diversity results from the Biology Meet
+## Subduction project leg 1 Samples from Norther and Central
+## Costa Rica collected in 2017.
+## This script and associated data are available from my github repository
+## and from the approapriate database (SRA). For questions please contact:
 ## Donato  Giovannelli - donato.giovannelli@unina.it - dgiovannelli.github.io
-## This script and associated data and materials are available from my github repository
-## and from the approapriate database (SRA)
 ##########################################################
-
 
 ### Load required libraries
 library(microbiome) # data analysis and visualisation
@@ -53,18 +53,18 @@ psotu2veg <- function(physeq) {
 theme_set(theme_bw()) #Set Global theme for ggplot2
 
 
-
-
 ####################################################################################
 ## Importing the diversity files obtained from the ASVs analysis into a phyloseq object
-## Count data have already been normalyzed applying the following function
-## transform_sample_counts(bac_data, function(x) ((x / sum(x))*median(readcounts(bac_data))))
+## the files bac_normalized_count.csv, bac_taxonomy.csv and bac_tree.tre where obtained 
+## from Mothur. The file SubductCR_bac_sample_table.csv containg the environmental data
+## is available in this Github repository. 
 
-# Bacteria
+# LET THE ANALYSIS BEGIN #
+# Building the phyloseq object
 bac_count <- as.matrix(read.csv("../16S/bac_normalized_count.csv", header=T, sep=",", row.names=1))
 bac_tax <- as.matrix(read.csv("../16S/bac_taxonomy.csv", header=T, sep=",", row.names=1))
 bac_tree <- read_tree("../16S/bac_tree.tre")
-bac_sample <- read.csv("../16S/bac_sample_table.csv", header=T, sep=",", row.names=1)
+bac_sample <- read.csv("../16S/SubductCR_bac_sample_table.csv", header=T, sep=",", row.names=1)
 colnames(bac_count) # Check the sample names
 length(colnames(bac_count)) # Check the number of samples
 
@@ -72,12 +72,11 @@ bac_data <- phyloseq(otu_table(bac_count, taxa_are_rows = TRUE), phy_tree(bac_tr
 bac_data # Inspect the object to get stat on number of taxa and samples
 readcount(bac_data)
 
-
-
-
-
 ################################################################################
 ## Data clean up and preprocessing
+# Normalize data across the different samples
+bac_data <- transform_sample_counts(bac_data, function(x) ((x / sum(x))*median(readcounts(bac_data))))
+
 # Clean up unwanted sequences from mitochrondria e chloroplast
 bac_data <- subset_taxa(bac_data, (Order!="Chloroplast") | is.na(Order))
 bac_data <- subset_taxa(bac_data, (Family!="Mitochondria") | is.na(Family))
@@ -207,10 +206,8 @@ ggplot(bac.prevdf1, aes(TotalAbundance, Prevalence, color = Class)) +
   )
 #dev.off()
 
-
 ##############################################################################
 ## Inspecting and plotting 16s rRNA diversity
-
 ## Subset and aggreate the dataset based on taxonomic level to ease computational work downstream
 # Check the number of aggregated taxa
 length(get_taxa_unique(bac_data, taxonomic.rank = "Genus"))
@@ -393,7 +390,7 @@ ggsave("sulfur_oxidizers.png", width=6, height=6)
 ## Load the environmental dataset
 # Complete observations with respect to the environmental data
 # loaded for the coupled microbial-environmental analysis
-dataset <- read.csv("../subductCR_final_dataset.csv", header = T, sep=",")
+dataset <- read.csv("../SubductCR_bac_sample_table.csv", header = T, sep=",")
 dataset$geol_prov<-as.factor(dataset$geol_prov) # correct import problem
 
 # Concentration in our dataset are in µmol/L and needs to be converted in mg/Kg for the Giggenplot after Giggenbach (1988)
@@ -415,8 +412,6 @@ ggtern(data=dataset, aes(x=(k*39.1)/10,y=(na*23)/400, z=(mg*24.3)^0.5)) +
 geom_point(aes(color=province), size=3) +
 geom_text(aes(label= code), size=3, hjust = -0.5, vjust = 1, check_overlap = F)
 ggsave("ternary_geothermometer_fluids.svg", width=6, height=6)
-
-
 
 
 ###########################################################################
@@ -651,8 +646,6 @@ ggsave("tree_gammaproteobacteria_temp.svg", width=10, height=8)
 plot_tree(subset_taxa(bac_ra, Phyla == "Aquificae"), color = "temp", label.tips = "Genus",
           size = "abundance", plot.margin = 0.5, ladderize = TRUE, title="Aquificae tree") + facet_grid(~type)
 ggsave("tree_aquificae_temp.svg", width=10, height=8)
-
-
 
 
 #####################################################
@@ -912,8 +905,6 @@ plot(scores(bac.v_nmds_j)[,2],data.frame(sample_data(bac_data_nopl))$cu_s, xlab=
 #dev.off()
 
 
-
-
 ################################################################################
 ## Prepare the data for the co-occurrence analysis
 ## Low abundance and low prevalence ASV need to be removed
@@ -978,9 +969,6 @@ ecount(bac.cor.ig)
 vcount(bac.cor.ig)
 message("Assortativity degree:")
 assortativity_degree(bac.cor.ig, directed=F)
-
-
-
 
 
 ###############################################################################
