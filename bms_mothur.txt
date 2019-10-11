@@ -1,0 +1,45 @@
+#################################################################
+## Analysis of the 16S rRNA reads from the "Biology Meets
+## Subduction" project leg 1 samples from Norther and Central
+## Costa Rica collected in 2017. Analysis performed using Mothur
+##  (https://www.mothur.org/). Analysis performed by Katie Fullerton
+at University of Tennessee at Knoxville.
+## This script and associated data are available from my GitHub repository
+## and from the appropriate database (SRA). For questions please contact:
+## Donato  Giovannelli - donato.giovannelli@unina.it - dgiovannelli.github.io
+################################################################
+
+
+## ASV Classification of the 16S rRNA Illumina reads
+# Brazelton Lab Python Scripts
+# Python scripts were downloaded from https://github.com/Brazelton-Lab/lab_scripts/tree/master/16S
+# following the bioinformatics pipeline established in Brazelton et al (2017)
+# Raw reads data are available in VAMPS and SRA archive
+
+# expand VAMPS fasta file according to abundance indicate at end of header
+fasta-expander-vamps-2016.py <each_file_name>.fasta
+
+# partition FASTA file into multiple files according to header
+fasta-sort-by-header.py
+
+# Creates a group file for a project by providing one or more fasta or fastq formatted files.
+group_from_filename.py  –separator . –position ! *.expanded.fa >  <project>.group
+#Concatenate all the separate fasta files into a single one for mothur input
+Cat *expanded.fa > <project>.fa
+
+###################################################################
+##Mothur Code
+
+count.groups(group = <project>.group)
+unique.seqs(fasta = <project>.fa)
+count.seqs(name = current, group = current)
+summary.seqs(count = current)
+align.seqs(fasta = current, reference = silva.nr_v132_vamps.fasta)
+summary.seqs(fasta = current, count = current)
+filter.seqs(fasta = current, count = current)
+summary.seqs(fasta = current, count = current)
+unique.seqs(fasta = current, count = current)
+summary.seqs(fasta = current, count = current)
+
+# Taxonomic classification perfomed against the Silva database v132 release
+classify.seqs(fasta = current, count = current, reference = silva.nr_v132_vamps.fasta, taxonomy = silva.nr_v132_vamps.tax)
