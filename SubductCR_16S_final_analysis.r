@@ -27,6 +27,7 @@ library(ggpubr)
 library(ggtern) # ternary plots for geochemistry
 library(plyr)
 library(coda.base)
+library(tydiverse)
 library(vegan) # Multivariate ecological analysis
 library(propr)
 library(missForest) # Imputing missing values in dataframes using Random Forests
@@ -55,25 +56,65 @@ theme_set(theme_bw()) #Set Global theme for ggplot2
 
 ####################################################################################
 ## Importing the diversity files obtained from the ASVs analysis into a phyloseq object
-## the files bac_normalized_count.csv, bac_taxonomy.csv and bac_tree.tre where obtained 
+## the files bac_normalized_count.csv, bac_taxonomy.csv and bac_tree.tre where obtained
 ## from Mothur. The file SubductCR_bac_sample_table.csv containg the environmental data
-## is available in this Github repository. 
+## is available in this Github repository.
 
 # LET THE ANALYSIS BEGIN #
-# Building the phyloseq object
-bac_count <- as.matrix(read.csv("../16S/bac_normalized_count.csv", header=T, sep=",", row.names=1))
-bac_tax <- as.matrix(read.csv("../16S/bac_taxonomy.csv", header=T, sep=",", row.names=1))
-bac_tree <- read_tree("../16S/bac_tree.tre")
-bac_sample <- read.csv("../16S/SubductCR_bac_sample_table.csv", header=T, sep=",", row.names=1)
-colnames(bac_count) # Check the sample names
-length(colnames(bac_count)) # Check the number of samples
 
+# Generate the appropriate count and taxa file from the Mothur output
+
+bac_count <- read.table("bms2017_bac_asv.expanded.unique.filter.count_table")
+colnames(bac_count) <- as.character(unlist(bac_count[1,]))
+bac_count = bac_count[-1, -2]
+bac_count_rownames <- bac_count$Representative_Sequence
+bac_count <- bac_count %>%
+  remove_rownames() %>%
+  column_to_rownames(var = "Representative_Sequence") %>%
+  select(`DCO_LLO_Bv4v5--BRF1_BR170218_1`:`DCO_LLO_Bv4v5--VCS_VC170218`)
+
+#convert factors to numeric matrix
+bac_count <- sapply(bac_count, function(x) as.numeric(as.character(x)))
+#set rownames back to sample ID
+row.names(bac_count) <- bac_count_rownames
+
+#expand taxon information columns and remove abundance
+bac_tax <- read.table("bms2017_bac_asv.expanded.unique.filter.unique.nr_v132.wang.taxonomy", stringsAsFactors = F)
+colnames(bac_tax) <- c("OTU", "taxonomy")
+bac_tax <- bac_tax %>%
+  separate(taxonomy, c('Domain', 'Phyla', 'Class', 'Order', 'Family', 'Genus', 'semi'), ';', extra = "merge") %>%
+  select(Domain:Genus) %>%
+  sapply(function(x) str_replace(x, "\\(.*?\\)", ""))
+rownames(bac_tax) <- bac_abundance_rownames
+
+# Phylogenetic tree generated in clearcut in mothur
+ bac_tree <- read_tree("bac_tree.tre")
+
+# Building the phyloseq object
 bac_data <- phyloseq(otu_table(bac_count, taxa_are_rows = TRUE), phy_tree(bac_tree), tax_table(bac_tax), sample_data(bac_sample))
 bac_data # Inspect the object to get stat on number of taxa and samples
 readcount(bac_data)
 
-################################################################################
-## Data clean up and preprocessing
+###CONTAMINATION SCREENING###
+# List of potential contaminant genera in subsurface 16S rRNA libraries after Sheik et al. 2018 Frontiers in Microbiology
+ccontaminants <- c("Afipia", "Aquabacterium", "Asticcacaulis", "Aurantimonas", "Beijerinckia", "Bosea", "Bradyrhizobium", "Brevundimonas", "Caulobacter", "Craurococcus", "Devosia", "Hoefleae", "Mesorhizobium", "Methylobacterium", "Novosphingobium", "Ochrobactrum", "Paracoccus", "Pedomicrobium", "Phyllobacterium", "Rhizobium", "Roseomonas", "Sphingobium", "Sphingomonas", "Sphingopyxis", "Acidovorax", "Azoarcus", "Azospira", "Burkholderia", "Comamonas", "Cupriavidus", "Curvibacter", "Delftiae", "Duganella", "Herbaspirillum", "Janthinobacterium", "Kingella", "Leptothrix", "Limnobacter", "Massilia", "Methylophilus", "Methyloversatilis", "Neisseria", "Oxalobacter", "Pelomonas", "Polaromonas", "Ralstonia", "Schlegelella", "Sulfuritalea", "Undibacterium", "Variovorax", "Acinetobactera", "Enhydrobacter", "Enterobacter", "Escherichia", "Nevskia", "Pasteurella", "Pseudomonas", "Pseudoxanthomonas", "Psychrobacter", "Stenotrophomonas", "Xanthomonas", "unclassified Acidobacteria Gp2", "Aeromicrobium", "Actinomyces", "Arthrobacter", "Beutenbergia", "Brevibacterium", "Corynebacterium", "Curtobacterium", "Dietzia", "Geodermatophilus", "Janibacter", "Kocuria", "Microbacterium", "Micrococcus", "Microlunatus", "Patulibacter", "Propionibacterium", "Rhodococcus", "Tsukamurella", "Chryseobacterium", "Dyadobacter", "Flavobacterium", "Hydrotalea", "Niastella", "Olivibacter", "Parabacteroides", "Pedobacter", "Prevotella", "Wautersiella", "Deinococcus", "Abiotrophia", "Bacillus", "Brevibacillus", "Brochothrix", "Facklamia", "Lactobacillus", "Paenibacillus", "Ruminococcus", "Staphylococcus", "Streptococcus", "Veillonella", "Fusobacterium")
+
+bac_shiek_contaminant <- bac_tax %>%
+  rownames_to_column(var = "OTU") %>%
+  #unite(taxon, c(Domain, Phyla, Class, Order, Family, Genus), remove = F) %>%
+  filter(Genus %in% contamination_1) %>%
+  select(OTU, Domain:Genus)
+
+# 5580 putative contaminants after abundance screening
+
+bac_contamination_otu <- bac_shiek_contaminant$OTU
+
+#generate phyloseq object of putative contaminants from relative abundance physeq object
+physeq_bac_contamination <- subset_taxa(bac_data, Genus %in% ccontaminationts)
+physeq_bac_contamination
+
+bac_data <- subset_taxa(bac_data, (Genus != ccontaminationts) |  is.na(Genus))
+
 # Normalize data across the different samples
 bac_data <- transform_sample_counts(bac_data, function(x) ((x / sum(x))*median(readcounts(bac_data))))
 
@@ -82,7 +123,7 @@ bac_data <- subset_taxa(bac_data, (Order!="Chloroplast") | is.na(Order))
 bac_data <- subset_taxa(bac_data, (Family!="Mitochondria") | is.na(Family))
 bac_data
 readcount(bac_data) # Check how many reads have been lost
-
+                
 # Removing unwanted samples
 bac_data <- subset_samples(bac_data, sample_names(bac_data) != "DCO_LLO_Bv4v5..PFF_PF170224" & sample_names(bac_data) !="DCO_LLO_Bv4v5..PFS_PF170222" & sample_names(bac_data) !="DCO_LLO_Bv4v5..PGF_PG170224" & sample_names(bac_data) !="DCO_LLO_Bv4v5..PGS_PG170224")
 bac_data = filter_taxa(bac_data, function(x) sum(x) > 0, TRUE) # After removing samples filter the taxa left with zero global abundance
