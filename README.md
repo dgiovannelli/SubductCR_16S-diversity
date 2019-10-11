@@ -4,6 +4,8 @@ This repository contains the raw data and the code used to analyze the interacti
 
 Data analyses have been performed using the freely available open source sfotware Mothur (https://www.mothur.org/) and the R Statistical Software [https://www.R-project.org/] (R development core team, 2010).
 
+The file SubductCR_mothus.sh contains the mothus commands, while the file SubductCR_16S_final_analysis.r cotains the R code used for the analysis. The raw sequences can be obtained from the NCBI SRA archive under Bioproject number XXXXXX while the file SubductCR_bac_sample_table.csv contains all the other environmental data.
+
 The preprint of the paper can be found on EarthXiv as preprint at www.
 
 For questions please contact me.
