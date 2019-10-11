@@ -9,3 +9,7 @@ The file SubductCR_mothus.sh contains the mothus commands, while the file Subduc
 The preprint of the paper can be found on EarthXiv as preprint at www.
 
 For questions please contact me.
+
+The code and data are released under the Creative Commons Licence Attribution 4.0 International (CC BY 4.0). Ream more about his license at https://creativecommons.org/licenses/by/4.0/.
+
+![CC-BY](https://www.fosteropenscience.eu/learning/open-licensing/course/en/assets/b4467d3769dbd7a80e8d641361ff364b505d118d.png)
