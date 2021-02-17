@@ -91,38 +91,13 @@ theme_set(theme_bw()) #Set Global theme for ggplot2
 
 # LET THE ANALYSIS BEGIN #
 
-# Generate the appropriate count and taxa file from the Mothur output
-
-bac_count <- read.table("bms2017_bac_asv.expanded.unique.filter.count_table")
-colnames(bac_count) <- as.character(unlist(bac_count[1,]))
-bac_count = bac_count[-1, -2]
-bac_count_rownames <- bac_count$Representative_Sequence
-bac_count <- bac_count %>%
-  remove_rownames() %>%
-  column_to_rownames(var = "Representative_Sequence") %>%
-  select(`DCO_LLO_Bv4v5--BRF1_BR170218_1`:`DCO_LLO_Bv4v5--VCS_VC170218`)
-
-#convert factors to numeric matrix
-bac_count <- sapply(bac_count, function(x) as.numeric(as.character(x)))
-#set rownames back to sample ID
-row.names(bac_count) <- bac_count_rownames
-
-#expand taxon information columns and remove abundance
-bac_tax <- read.table("bms2017_bac_asv.expanded.unique.filter.unique.nr_v132.wang.taxonomy", stringsAsFactors = F)
-colnames(bac_tax) <- c("OTU", "taxonomy")
-bac_tax <- bac_tax %>%
-  separate(taxonomy, c('Domain', 'Phyla', 'Class', 'Order', 'Family', 'Genus', 'semi'), ';', extra = "merge") %>%
-  select(Domain:Genus) %>%
-  sapply(function(x) str_replace(x, "\\(.*?\\)", ""))
-rownames(bac_tax) <- bac_abundance_rownames
-
-# Phylogenetic tree generated in clearcut in mothur
- bac_tree <- read_tree("bac_tree.tre")
-
-# Building the phyloseq object
-bac_data <- phyloseq(otu_table(bac_count, taxa_are_rows = TRUE), phy_tree(bac_tree), tax_table(bac_tax), sample_data(bac_sample))
-bac_data # Inspect the object to get stat on number of taxa and samples
-readcount(bac_data)
+# Import the files
+bac_count <- as.matrix(read.csv("16S_rRNA_data/bac_normalized_count.csv", header=T, sep=",", row.names=1))
+bac_tax <- as.matrix(read.csv("16S_rRNA_data/bac_taxonomy.csv", header=T, sep=",", row.names=1))
+bac_tree <- read_tree("16S_rRNA_data/bac_tree.tre")
+bac_sample <- read.csv("16S_rRNA_data/bac_sample_table.csv", header=T, sep=",", row.names=1)
+colnames(bac_count) # Check the sample names
+length(colnames(bac_count)) # Check the number of samples
 
 ###CONTAMINATION SCREENING###
 # List of potential contaminant genera in subsurface 16S rRNA libraries after Sheik et al. 2018 Frontiers in Microbiology

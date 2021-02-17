@@ -34,6 +34,11 @@ library(missForest) # Imputing missing values in dataframes using Random Forests
 library(VSURF) # Random Forests approach to variable importance identification
 library(car) #for scatterplot
 
+
+#########################################################
+## START HERE FOR SEPARATED MI-FASER OUTPUTS
+#########################################################
+
 # Importing all the mi-faser csv files as separate objects
 temp = list.files(pattern="*.csv")
 for (i in 1:length(temp)) assign(temp[i], read.csv(temp[i]))
@@ -46,14 +51,23 @@ temp<-list(mifaser,ARS_mifaser.csv, BQF_mifaser.csv, BQS_mifaser.csv, BQS1_mifas
 
 dataset <- join_all(temp, "ec")
 
-
-
 # Selecting only the readcount data
 dataset <- cbind (dataset[,1], dataset[ , grepl( "readcount" , names( dataset ) ) ])
 
 colnames(dataset)<-c('EC', 'ARS', 'BQF', 'BQS', 'BQS1', 'BR1F', 'BRF1', 'BRF2', 'BRS1', 'BRS2', 'CYF', 'CYS', 'EPF', 'EPS', 'ESF9', 'ETS', 'FAS', 'MTF', 'PBS', 'PFF', 'PFS', 'PGF', 'PGS', 'PLS', 'QH2F', 'QHS1', 'QHS2', 'QNF', 'QNS', 'RSF', 'RSS', 'RVF', 'SIF', 'SIS', 'SLF', 'SLS', 'TCF', 'TCS')
 
 colnames(dataset)
+
+##############################################################
+#START HERE TO REPRODUCE THE ANALYSIS FROM THE DATA IN THE REPOSITORY
+#############################################################
+
+dataset <- read.csv("mifaser_dataset.csv", header=T, sep=",")
+
+
+#############################################################
+# Continue from here once you have loaded the appropriate dataset
+#############################################################
 
 dataset_clean<-subset (dataset, select=-c(ARS,PFF,PFS,PGS,PGF,PLS))
 
@@ -69,6 +83,7 @@ ecdata <- phyloseq(otu_table(ecdata, taxa_are_rows = T))
 
 ecdata #inspect the object
 
+
 # Normalize counts to relative abundance first and then multiply for the median library abundance
 ecdata_n <- transform_sample_counts(ecdata, function(x) ((x / sum(x, na.rm=T))*median(colSums(ecdata, na.rm=T))))
 
@@ -76,7 +91,7 @@ median(colSums(ecdata, na.rm=T))
 
 ecdata_n
 
-# extract only the relevanc EC number for carbon metabolism
+# extract only the relevant EC number for carbon metabolism
 ec_list<-read.csv("ec_list_carbon.csv", header=F)
 
 ec_list<-as.matrix(ec_list)
