@@ -3,9 +3,38 @@
 ## Subduction project leg 1 Samples from Norther and Central
 ## Costa Rica collected in 2017.
 ## This script and associated data are available from my github repository
-## and from the approapriate database (SRA). For questions please contact:
-## Donato  Giovannelli - donato.giovannelli@unina.it - dgiovannelli.github.io
+## and from the appropriate database (SRA). For questions please contact:
+## Donato Giovannelli - donato.giovannelli@unina.it - dgiovannelli.github.io
 ##########################################################
+
+#########################################################
+#To address reviewer comments we have rerun the whole analysis to clarify some of the points.
+#
+#The data have been explored extensively in the notebook SubductCR_16S_analysis present in the same folder. thsi is the final consensus analysis to be used in the paper.
+#
+#The analytical strategy is a mix of the code found at http://tiny.cc/mrjs5y, persoanl code developped in house and the description of the analysis carried out in the paper Delgado-Baquerizo et al., Science 359, 320–325 (2018). Most of the code as been readapted from a number of tutorial connected to phyloseq and vegan.
+#
+#The analytical strategy includes:
+#
+#Import the data from dada2
+#- Clean up the data following the strategy described below that stems from a number of trial and test already run on the full dataset
+#- Analyze the prevalence and the distribution of the diversity across sample type and provinces using both barplots and heatmaps
+#- Remove from the dataset outlier sites or sites with no statistical representation, such as Pompilio Farm and Poas Lagoon, Poas Background soil sample and, only in certain analyses, Poas Lake (since it is not an hotspring)
+#- Plot the diversity across the remaining sites
+#- Perform multivariate analysis using nMDS with Jaccard and PCoA with Unifrac distance (both weighted and unweighted)
+#- Perform linear vector fitting on the obtained ordinations
+#- Identify the dominant bacterial phylotypes by removing ASV with abundance below 10 reads across all sample and that to not appear at least in 2 samples based on the prevalence analysis (this analysis need to be carried out with PL removed)
+#- Construct a co-occurrence network across the samples with fluids and sediments separated (two different network)
+#- Perform a modularity analysis on the network
+#- Extract the identified cliques and correlate them against the environmental variables using both Pearson and Spearman
+#- Inspect the corresponding scatter plots to visually confirm correlations
+#- Perform a Random Forrest approach to identify key environmental variables in explaining observed cliques
+#
+#NB. The local meteoric water line in Costa Rica is δD=7.6*δ18O+10.5 (Lach-niet and Patterson, 2002)
+
+########################################################
+
+
 
 ### Load required libraries
 library(microbiome) # data analysis and visualisation
@@ -123,7 +152,7 @@ bac_data <- subset_taxa(bac_data, (Order!="Chloroplast") | is.na(Order))
 bac_data <- subset_taxa(bac_data, (Family!="Mitochondria") | is.na(Family))
 bac_data
 readcount(bac_data) # Check how many reads have been lost
-                
+
 # Removing unwanted samples
 bac_data <- subset_samples(bac_data, sample_names(bac_data) != "DCO_LLO_Bv4v5..PFF_PF170224" & sample_names(bac_data) !="DCO_LLO_Bv4v5..PFS_PF170222" & sample_names(bac_data) !="DCO_LLO_Bv4v5..PGF_PG170224" & sample_names(bac_data) !="DCO_LLO_Bv4v5..PGS_PG170224")
 bac_data = filter_taxa(bac_data, function(x) sum(x) > 0, TRUE) # After removing samples filter the taxa left with zero global abundance
