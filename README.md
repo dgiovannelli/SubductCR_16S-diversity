@@ -2,7 +2,10 @@
 
 [![DOI](https://zenodo.org/badge/199023313.svg)](https://zenodo.org/badge/latestdoi/199023313)
 
-preprint_release v1.0
+The paper can be accessed at [https://doi.org/10.1038/s41561-021-00725-0](https://doi.org/10.1038/s41561-021-00725-0)
+
+Cite as:
+>Fullerton, K.M., Schrenk, M.O., Yücel, M. et al. Effect of tectonic processes on biosphere–geosphere feedbacks across a convergent margin. Nat. Geosci. (2021). https://doi.org/10.1038/s41561-021-00725-0
 
 This repository contains the raw data and the code used to analyze the interaction between the 16S rRNA microbial diversity and geochemistry across the hot spring of Costa Rica collected in the framework of the "Biology Meets Subductions" project, financed by the Deep Carbon Observatory and the Alfred P. Sloan Foundation.
 
